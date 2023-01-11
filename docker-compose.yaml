@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  base:
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+    image: python-base
+    volumes:
+      - .:/home/python-base/project
+    environment:
+      PYTHONPATH: /home/python-base/project/src
+    networks:
+      - default
+  no4j:
+    image: neo4j:latest
+    networks:
+      - default
+    environment:
+      NEO4J_AUTH: none
+    ports:
+      - "7474:7474"
+      - "7687:7687"

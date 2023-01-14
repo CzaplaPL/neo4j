@@ -3,8 +3,8 @@ version: '3.9'
 services:
   base:
     build:
-      context: ./
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: docker/python/Dockerfile
     image: python-base
     volumes:
       - .:/home/python-base/project
@@ -12,10 +12,14 @@ services:
       PYTHONPATH: /home/python-base/project/src
     networks:
       - default
-  no4j:
-    image: neo4j:latest
+  neo4j:
+    build:
+      context: .
+      dockerfile: docker/neo4j/Dockerfile
     networks:
       - default
+    volumes:
+      - ./foodmart-import.cyp:/var/lib/neo4j/foodmart-import.cyp
     environment:
       NEO4J_AUTH: none
     ports:

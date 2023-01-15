@@ -13,9 +13,7 @@ services:
     networks:
       - default
   neo4j:
-    build:
-      context: .
-      dockerfile: docker/neo4j/Dockerfile
+    image: neo4j:latest
     networks:
       - default
     volumes:

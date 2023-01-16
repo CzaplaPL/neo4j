@@ -8,45 +8,84 @@ def print_connection_details(info: ServerInfo) -> None:
     print(f"Connection info: agent={info.agent} address={info.address} protocol_version={info.protocol_version}")
 
 
-def print_sales_count_from_date(session: Session) -> None:
-    date: str = '1998-10-26'
-    result = session.run(
-        "MATCH (o:Sale) -[:ON_DATE]->(d:Date {date: $order_date}) RETURN count(o) as count_of_sales",
-        order_date=date
-    ).single()
-    count = result.data()['count_of_sales']
-    print(f'Sales count from day {date} is {count}.')
+def print_all_nodes(session: Session) -> None:
+    count = session.run("""
+        MATCH ()
+        RETURN COUNT(*) as count
+    """).single()
+    result = session.run("""
+        MATCH (s)
+        RETURN s
+    """).fetch(10)
+    print(f"Nodes count: {count.data()['count']}")
+    for item in result:
+        print(item.data())
 
 
-def print_ten_first_product_categories(session: Session) -> None:
-    result = session.run("MATCH (pc: ProductCategory) RETURN pc").fetch(10)
-    print('10 product categories:')
-    for record in result:
-        item = record.data()
-        print('- ', item['pc']['name'])
+def add_new_nodes(session: Session) -> None:
+    test = session.run("""
+            CREATE (s1:Student {fullname: "Kacper Czajkowski", birthdate: "1999-11-19"}),
+                (s2:Student {fullname: "Dominik Daniłowski", birthdate: "1998-04-17"}),
+                (s3:Student {fullname: "Marcin Zadrożny", birthdate: "2000-08-21"}),
+                (w:Wydzial {name: "Wydział Matematyki i Informatyki", abbreviation: "WMII"}),
+                (s2) -[r1:STUDIUJE_NA]-> (w),
+                (s3) -[r2:STUDIUJE_NA]-> (w)
+            RETURN s1, s2, s3, w
+        """).single()
+    print(test.data())
 
 
-# TODO implementacja
-def add_new_customer(session: Session) -> None:
-    # session.run("""
-    #     CREATE
-    # """)
-    pass
+def add_relationship_between_existing_nodes(session: Session) -> None:
+    result = session.run("""
+        MATCH (s:Student {fullname: "Kacper Czajkowski"}), (w:Wydzial {abberviation: "WMII"})
+        CREATE (s) -[:STUDIUJE_NA]-> (w)
+    """).single()
 
 
-# TODO implementacja
-def add_relation_for_customer_and_region(session: Session) -> None:
-    pass
+def add_or_update_property_in_node(session: Session) -> None:
+    result = session.run("""
+        MATCH (s:Student {fullname: "Kacper Czajkowski"})
+        SET s.fullname = "Kacper Zedytowany Czajkowski"
+    """).single()
 
 
-# TODO implementacja
-def update_customer_label(session: Session) -> None:
-    pass
+def override_all_properties_of_node(session: Session) -> None:
+    result = session.run("""
+        MATCH (s:Student {fullname: "Dominik Daniłowski"})
+        SET s = {full_name: "Henryk Daniłowski", age: 24}
+    """).single()
+
+
+def update_multiple_properties(session: Session) -> None:
+    result = session.run("""
+        MATCH (s:Student {fullname: "Marcin Zadrożny"})
+        SET s += {fullname: "Marcin Odświeżony Zadrożny", age: 23}
+    """).single()
+
+
+# usuwanie
+# usuwanie node'a
+# usuwanie property
+# usuwanie labela ze wszystkich node'ów
+# usuwanie wszystkiego
+def remove_all_nodes_and_relationships(session: Session) -> None:
+    session.run("""
+        MATCH (n)
+        DETACH DELETE n;
+    """).single()
 
 
 if __name__ == '__main__':
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         print_connection_details(driver.get_server_info())
         with driver.session() as session:
-            print_ten_first_product_categories(session)
-            print_sales_count_from_date(session)
+            remove_all_nodes_and_relationships(session)
+            print_all_nodes(session)
+            add_new_nodes(session)
+            print_all_nodes(session)
+            add_relationship_between_existing_nodes(session)
+            print_all_nodes(session)
+            update_multiple_properties(session)
+            print_all_nodes(session)
+            override_all_properties_of_node(session)
+            print_all_nodes(session)
